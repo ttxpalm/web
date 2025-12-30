@@ -279,7 +279,8 @@
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-API-Token': '66122519026' // <--- ✅ เพิ่ม Key ตรงนี้ครับ
                 },
                 body: JSON.stringify({
                     user_id: userProfile.userId,
