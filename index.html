@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Integrated Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f7f9fb; font-family: 'Kanit', sans-serif; }
+        .chat-container { height: calc(100vh - 180px); overflow-y: auto; scroll-behavior: smooth; }
+        .message-bubble { max-width: 80%; border-radius: 20px; }
+        #loginOverlay { backdrop-filter: blur(8px); }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <div id="loginOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full mx-4">
+            <div class="mb-6">
+                <i class="fab fa-line text-6xl text-[#06C755]"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">ยินดีต้อนรับ</h2>
+            <p class="text-gray-500 mb-6">กรุณาเข้าสู่ระบบด้วย LINE เพื่อเริ่มใช้งานห้องแชท</p>
+            <button onclick="login()" class="w-full bg-[#06C755] text-white font-bold py-3 rounded-full hover:bg-[#05b34c] transition duration-300">
+                Login with LINE
+            </button>
+        </div>
+    </div>
+
+    <header class="bg-white border-b p-4 flex items-center justify-between sticky top-0 z-10">
+        <div class="flex items-center space-x-3">
+            <img id="userAvatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border border-gray-200">
+            <div>
+                <p id="userName" class="font-bold text-gray-800 leading-none">Loading...</p>
+                <p class="text-[10px] text-green-500 mt-1 font-medium">● เชื่อมต่อแล้ว</p>
+            </div>
+        </div>
+        <button onclick="logout()" class="text-gray-400 hover:text-red-500 text-sm">ออกจากระบบ</button>
+    </header>
+
+    <main id="chatBox" class="chat-container flex-1 p-4 space-y-4">
+        </main>
+
+    <footer class="bg-white p-4 border-t shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+        <div class="flex items-center space-x-3 max-w-5xl mx-auto">
+            <input id="userInput" type="text" placeholder="พิมพ์ข้อความ..." 
+                   class="flex-1 bg-gray-100 border-none rounded-2xl px-5 py-3 focus:ring-2 focus:ring-blue-400 outline-none transition-all">
+            <button id="sendBtn" class="bg-blue-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-transform active:scale-90 shadow-lg">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = "https://lakeisha-catabolic-chara.ngrok-free.dev/api/web/chat";
+        const LIFF_ID = "2008801500-KHOUXJ8m"; // <--- ใส่ LIFF ID ของคุณตรงนี้
+
+        let userProfile = null;
+
+        // 1. Initialize LIFF
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    showChat();
+                } else {
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("LIFF Init Error", err);
+            }
+        }
+
+        async function login() {
+            liff.login();
+        }
+
+        async function logout() {
+            liff.logout();
+            window.location.reload();
+        }
+
+        async function showChat() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            userProfile = await liff.getProfile();
+            document.getElementById('userName').innerText = userProfile.displayName;
+            document.getElementById('userAvatar').src = userProfile.pictureUrl;
+            
+            addMessage(`สวัสดีคุณ ${userProfile.displayName} มีอะไรให้ช่วยไหมครับ?`, false);
+        }
+
+        // 2. Chat Logic
+        function addMessage(text, isUser = true) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const chatBox = document.getElementById('chatBox');
+            
+            const messageHtml = `
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in">
+                    <div class="message-bubble ${isUser ? 'bg-blue-500 text-white shadow-blue-200' : 'bg-white text-gray-800 border border-gray-100 shadow-sm'} p-4 shadow-md">
+                        <p class="text-sm leading-relaxed">${text}</p>
+                        <span class="block text-[9px] mt-2 ${isUser ? 'text-blue-100 text-right' : 'text-gray-400 text-left'} font-light">${time}</span>
+                    </div>
+                </div>
+            `;
+            chatBox.insertAdjacentHTML('beforeend', messageHtml);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            input.value = '';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        userId: userProfile.userId, // ส่ง ID ของ LINE ไปด้วย
+                        displayName: userProfile.displayName 
+                    })
+                });
+                const data = await response.json();
+                addMessage(data.reply || "ได้รับข้อมูลแล้วครับ", false);
+            } catch (error) {
+                addMessage("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์", false);
+            }
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        main();
+    </script>
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</body>
+</html>
