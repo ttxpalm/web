@@ -2,176 +2,291 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with Niti Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Condo - IG Style</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; display: flex; justify-content: center; }
-        #app-container { width: 100%; max-width: 500px; height: 100vh; background: white; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        
-        /* Login Screen */
-        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .login-btn { background-color: #00B900; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; }
-        
-        /* Header */
-        header { background-color: #00B900; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .profile-area { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .profile-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        :root {
+            --ig-bg: #ffffff;
+            --ig-secondary-bg: #efefef;
+            --ig-blue: #0095f6;
+            --user-bubble: linear-gradient(to bottom right, #7F00FF, #E100FF);
+            --bot-bubble: #efefef;
+        }
 
-        /* Chat Box */
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background-color: #eef1f5; }
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
-        .bot { align-self: flex-start; background-color: white; color: #333; border-bottom-left-radius: 2px; }
-        .user { align-self: flex-end; background-color: #00B900; color: white; border-bottom-right-radius: 2px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Sarabun", sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Container & Login */
+        .phone-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            background-color: var(--ig-bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (min-width: 500px) {
+            .phone-container { height: 90vh; border-radius: 30px; border: 8px solid #222; }
+        }
+
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .login-btn {
+            background: var(--user-bubble);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Header */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #dbdbdb;
+            background: white;
+        }
+
+        .profile-pic { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #eee; }
+        .user-info { flex: 1; }
+        .username { font-weight: 600; font-size: 14px; }
+        .status { font-size: 11px; color: #8e8e8e; }
+
+        /* Chat Area */
+        #chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #fff;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } }
+
+        .user { align-self: flex-end; background: var(--user-bubble); color: white; border-bottom-right-radius: 4px; }
+        .bot { align-self: flex-start; background: var(--bot-bubble); color: black; border-bottom-left-radius: 4px; }
+        
+        .chat-img { max-width: 200px; border-radius: 15px; margin-top: 5px; cursor: pointer; }
 
         /* Input Area */
-        .input-area { padding: 10px; border-top: 1px solid #ddd; display: flex; background: white; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        button { margin-left: 10px; padding: 0 20px; background-color: #00B900; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        button:disabled { background-color: #ccc; }
-        
+        .input-area {
+            padding: 10px 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+        }
+
+        .icon-btn { cursor: pointer; color: #333; display: flex; align-items: center; }
+        .input-wrapper {
+            flex: 1;
+            background: var(--ig-secondary-bg);
+            border-radius: 25px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        input { flex: 1; border: none; background: transparent; outline: none; font-size: 14px; padding: 5px 0; }
+        .send-btn { color: var(--ig-blue); font-weight: 700; cursor: pointer; margin-left: 10px; display: none; }
+
+        /* Utils */
         .hidden { display: none !important; }
+        .typing { font-size: 12px; color: #8e8e8e; margin-left: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<div id="app-container">
+<div class="phone-container">
     <div id="login-screen">
-        <h2 style="color:#00B900;">Smart Condo Chat</h2>
-        <button class="login-btn" onclick="liffLogin()">เข้าสู่ระบบด้วย LINE</button>
-        <p id="status-msg" style="margin-top:20px; color:gray;">Checking LIFF...</p>
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="80" style="margin-bottom: 20px;">
+        <h2 style="margin-bottom: 5px;">Smart Condo</h2>
+        <p style="color: #8e8e8e; margin-bottom: 30px;">กรุณาเข้าสู่ระบบเพื่อคุยกับนิติ</p>
+        <button class="login-btn" onclick="liffLogin()">Log in with LINE</button>
+        <p id="status-msg" style="margin-top:20px; font-size: 12px; color: #ccc;">Initializing...</p>
     </div>
 
-    <div id="chat-screen" class="hidden">
-        <header>
-            <span>💬 น้องบอตนิติ</span>
-            <div class="profile-area">
-                <span id="display-name">Loading...</span>
-                <img id="profile-pic" src="" class="profile-img hidden">
+    <div id="chat-screen" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+        <header class="chat-header">
+            <div class="icon-btn" style="margin-right: 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </div>
+            <img id="header-pic" src="" class="profile-pic">
+            <div class="user-info">
+                <div class="username" id="header-name">Niti Bot</div>
+                <div class="status">Active now</div>
             </div>
         </header>
 
-        <div id="chat-box">
-            <div class="message bot">สวัสดีค่ะ มีอะไรให้น้องบอตช่วยไหมคะ?</div>
+        <div id="chat-area">
+            <div class="message bot">สวัสดีค่ะ มีอะไรให้ช่วยไหมคะ?</div>
         </div>
+        
+        <div id="typing-ui" class="typing">กำลังพิมพ์...</div>
 
         <div class="input-area">
-            <input type="text" id="message-input" placeholder="พิมพ์ข้อความ..." onkeypress="handleEnter(event)">
-            <button id="send-btn" onclick="sendMessage()">ส่ง</button>
+            <label class="icon-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImage(this)">
+            </label>
+            
+            <div class="input-wrapper">
+                <input type="text" id="message-input" placeholder="พิมพ์ข้อความ..." autocomplete="off">
+                <div id="send-btn" class="send-btn" onclick="handleSend()">Send</div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURATION ---
+    // --- CONFIG ---
     const LIFF_ID = "2008801500-KHOUXJ8m"; 
     const API_URL = "https://lakeisha-catabolic-chara.ngrok-free.dev/api/web/chat";
-    const API_TOKEN = "MY_SECRET_KEY";
+    const API_TOKEN = "66122519026";
 
     let userProfile = null;
 
-    // 1. Initialize LIFF
+    // 1. LIFF Init
     async function main() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (liff.isLoggedIn()) {
-                getUserProfile();
+                loadProfile();
             } else {
-                document.getElementById('status-msg').innerText = "กรุณาเข้าสู่ระบบ";
+                document.getElementById('status-msg').innerText = "พร้อมใช้งาน";
             }
         } catch (err) {
-            document.getElementById('status-msg').innerText = "LIFF Error: " + err;
             console.error(err);
         }
     }
     main();
 
-    function liffLogin() {
-        if (!liff.isLoggedIn()) liff.login();
+    function liffLogin() { liff.login(); }
+
+    async function loadProfile() {
+        userProfile = await liff.getProfile();
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('chat-screen').classList.remove('hidden');
+        document.getElementById('header-name').innerText = userProfile.displayName;
+        document.getElementById('header-pic').src = userProfile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
     }
 
-    async function getUserProfile() {
-        try {
-            const profile = await liff.getProfile();
-            userProfile = profile;
-            
-            // Show Chat Screen
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('chat-screen').classList.remove('hidden');
-            
-            // Set UI
-            document.getElementById('display-name').innerText = profile.displayName;
-            if(profile.pictureUrl) {
-                const img = document.getElementById('profile-pic');
-                img.src = profile.pictureUrl;
-                img.classList.remove('hidden');
-            }
-        } catch (err) {
-            console.error('Profile Error:', err);
-        }
-    }
+    // 2. Chat UI Logic
+    const msgInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatArea = document.getElementById('chat-area');
+    const typingUi = document.getElementById('typing-ui');
 
-    // 2. Send Message Logic (ป้องกัน 400 Bad Request)
-    async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const btn = document.getElementById('send-btn');
-        const text = input.value.trim();
+    msgInput.addEventListener('input', () => {
+        sendBtn.style.display = msgInput.value.trim() ? 'block' : 'none';
+    });
 
-        // Safety Check: ต้องมี User ID ก่อนส่ง
-        if (!userProfile || !userProfile.userId) {
-            alert("⚠️ ข้อมูลผู้ใช้ไม่ถูกต้อง กรุณารีเฟรชหน้าเว็บ");
-            return;
-        }
+    msgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSend();
+    });
 
-        if (!text) return;
+    // 3. Handle Send Message
+    async function handleSend() {
+        const text = msgInput.value.trim();
+        if (!text || !userProfile) return;
 
-        // UI Update
         appendMessage(text, 'user');
-        input.value = '';
-        btn.disabled = true;
+        msgInput.value = '';
+        sendBtn.style.display = 'none';
+        
+        await callApi({ message: text });
+    }
+
+    // 4. Handle Image Upload
+    function handleImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // แสดงรูปในแชทฝั่ง User
+                const imgHtml = `<img src="${e.target.result}" class="chat-img">`;
+                appendMessage(imgHtml, 'user', true);
+                
+                // ส่งไป API (ในที่นี้ส่งเป็น Base64 หรือจะปรับเป็น FormData ก็ได้)
+                callApi({ 
+                    message: "[ส่งรูปภาพ]", 
+                    image_data: e.target.result 
+                });
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 5. API Call
+    async function callApi(payload) {
+        typingUi.style.display = 'block';
+        chatArea.scrollTop = chatArea.scrollHeight;
 
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',  // สำคัญมาก
-                    'Authorization': `Bearer ${66122519026}` // สำคัญมาก
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_TOKEN}`
                 },
                 body: JSON.stringify({
                     user_id: userProfile.userId,
-                    message: text,
                     display_name: userProfile.displayName,
-                    picture_url: userProfile.pictureUrl
+                    picture_url: userProfile.pictureUrl,
+                    ...payload
                 })
             });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || response.statusText);
-            }
-
             const data = await response.json();
-            if (data.reply) appendMessage(data.reply, 'bot');
-
-        } catch (error) {
-            console.error(error);
-            appendMessage("❌ เกิดข้อผิดพลาด: " + error.message, 'bot');
+            appendMessage(data.reply || "บอทได้รับข้อความแล้วค่ะ", 'bot');
+        } catch (err) {
+            appendMessage("ขออภัย ระบบขัดข้อง: " + err.message, 'bot');
         } finally {
-            btn.disabled = false;
+            typingUi.style.display = 'none';
         }
     }
 
-    function appendMessage(text, sender) {
-        const box = document.getElementById('chat-box');
+    function appendMessage(content, sender, isHTML = false) {
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        div.innerText = text;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function handleEnter(e) {
-        if (e.key === 'Enter') sendMessage();
+        if (isHTML) div.innerHTML = content;
+        else div.innerText = content;
+        chatArea.appendChild(div);
+        chatArea.scrollTop = chatArea.scrollHeight;
     }
 </script>
 
