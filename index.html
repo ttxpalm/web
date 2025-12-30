@@ -48,10 +48,11 @@
             justify-content: center;
             height: 100%;
             text-align: center;
+            padding: 20px;
         }
 
         .login-btn {
-            background: var(--user-bubble);
+            background: #06C755; /* LINE Green */
             color: white;
             border: none;
             padding: 15px 40px;
@@ -59,6 +60,20 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 16px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+
+        .guest-btn {
+            background: #ddd;
+            color: #333;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            width: 80%;
         }
 
         /* Header */
@@ -110,6 +125,7 @@
             align-items: center;
             gap: 10px;
             background: white;
+            border-top: 1px solid #efefef;
         }
 
         .icon-btn { cursor: pointer; color: #333; display: flex; align-items: center; }
@@ -127,7 +143,7 @@
 
         /* Utils */
         .hidden { display: none !important; }
-        .typing { font-size: 12px; color: #8e8e8e; margin-left: 10px; display: none; }
+        .typing { font-size: 12px; color: #8e8e8e; margin-left: 20px; margin-bottom: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -136,14 +152,17 @@
     <div id="login-screen">
         <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="80" style="margin-bottom: 20px;">
         <h2 style="margin-bottom: 5px;">Smart Condo</h2>
-        <p style="color: #8e8e8e; margin-bottom: 30px;">กรุณาเข้าสู่ระบบเพื่อคุยกับนิติ</p>
+        <p style="color: #8e8e8e; margin-bottom: 30px;">ระบบผู้ช่วยนิติบุคคลอัจฉริยะ</p>
+        
         <button class="login-btn" onclick="liffLogin()">Log in with LINE</button>
-        <p id="status-msg" style="margin-top:20px; font-size: 12px; color: #ccc;">Initializing...</p>
+        <button class="guest-btn" onclick="guestLogin()">Test (Guest Mode)</button>
+        
+        <p id="status-msg" style="margin-top:20px; font-size: 12px; color: #ccc;">Checking LIFF...</p>
     </div>
 
     <div id="chat-screen" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
         <header class="chat-header">
-            <div class="icon-btn" style="margin-right: 10px;">
+            <div class="icon-btn" style="margin-right: 10px;" onclick="location.reload()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </div>
             <img id="header-pic" src="" class="profile-pic">
@@ -154,19 +173,19 @@
         </header>
 
         <div id="chat-area">
-            <div class="message bot">สวัสดีค่ะ มีอะไรให้ช่วยไหมคะ?</div>
+            <div class="message bot">สวัสดีค่ะ มีเรื่องคอนโดสอบถามได้เลยนะคะ เช่น "กฎระเบียบ", "ส่วนกลาง" หรือ "เลี้ยงสัตว์" ค่ะ 😊</div>
         </div>
         
-        <div id="typing-ui" class="typing">กำลังพิมพ์...</div>
+        <div id="typing-ui" class="typing">นิติกำลังพิมพ์...</div>
 
         <div class="input-area">
             <label class="icon-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImage(this)">
             </label>
             
             <div class="input-wrapper">
-                <input type="text" id="message-input" placeholder="พิมพ์ข้อความ..." autocomplete="off">
+                <input type="text" id="message-input" placeholder="พิมพ์ข้อความที่นี่..." autocomplete="off">
                 <div id="send-btn" class="send-btn" onclick="handleSend()">Send</div>
             </div>
         </div>
@@ -176,9 +195,9 @@
 <script>
     // --- CONFIG ---
     const LIFF_ID = "2008801500-KHOUXJ8m"; 
-    const API_URL = "https://lakeisha-catabolic-chara.ngrok-free.dev/api/web/chat";
-    const API_TOKEN = "66122519026";
-
+    // แก้ URL ให้ชี้ไปที่ Localhost ของคุณ
+    const API_URL = "https://lakeisha-catabolic-chara.ngrok-free.dev/api/web/chat"; 
+    
     let userProfile = null;
 
     // 1. LIFF Init
@@ -186,20 +205,39 @@
         try {
             await liff.init({ liffId: LIFF_ID });
             if (liff.isLoggedIn()) {
-                loadProfile();
+                const profile = await liff.getProfile();
+                setProfile(profile);
             } else {
                 document.getElementById('status-msg').innerText = "พร้อมใช้งาน";
             }
         } catch (err) {
-            console.error(err);
+            console.warn("LIFF Init failed (Localhost?):", err);
+            document.getElementById('status-msg').innerText = "LIFF ไม่ทำงาน (ใช้ Guest Mode ได้)";
         }
     }
     main();
 
-    function liffLogin() { liff.login(); }
+    function liffLogin() { 
+        if(liff.isLoggedIn()){
+            liff.getProfile().then(profile => setProfile(profile));
+        } else {
+            liff.login(); 
+        }
+    }
 
-    async function loadProfile() {
-        userProfile = await liff.getProfile();
+    // ฟังก์ชันสำหรับทดสอบโดยไม่ต้อง Login LINE จริง
+    function guestLogin() {
+        const randomId = "guest_" + Math.floor(Math.random() * 10000);
+        const guestProfile = {
+            userId: randomId,
+            displayName: "Guest User",
+            pictureUrl: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+        };
+        setProfile(guestProfile);
+    }
+
+    function setProfile(profile) {
+        userProfile = profile;
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('chat-screen').classList.remove('hidden');
         document.getElementById('header-name').innerText = userProfile.displayName;
@@ -232,26 +270,7 @@
         await callApi({ message: text });
     }
 
-    // 4. Handle Image Upload
-    function handleImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // แสดงรูปในแชทฝั่ง User
-                const imgHtml = `<img src="${e.target.result}" class="chat-img">`;
-                appendMessage(imgHtml, 'user', true);
-                
-                // ส่งไป API (ในที่นี้ส่งเป็น Base64 หรือจะปรับเป็น FormData ก็ได้)
-                callApi({ 
-                    message: "[ส่งรูปภาพ]", 
-                    image_data: e.target.result 
-                });
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // 5. API Call
+    // 4. API Call
     async function callApi(payload) {
         typingUi.style.display = 'block';
         chatArea.scrollTop = chatArea.scrollHeight;
@@ -260,21 +279,27 @@
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_TOKEN}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     user_id: userProfile.userId,
                     display_name: userProfile.displayName,
-                    picture_url: userProfile.pictureUrl,
-                    ...payload
+                    ...payload // ส่ง message เข้าไป
                 })
             });
 
+            if (!response.ok) throw new Error("Server Error");
+
             const data = await response.json();
-            appendMessage(data.reply || "บอทได้รับข้อความแล้วค่ะ", 'bot');
+            
+            // แปลง \n เป็น <br> เพื่อแสดงผลสวยๆ
+            const replyText = data.reply ? data.reply.replace(/\n/g, '<br>') : "ไม่ได้รับคำตอบจากระบบ";
+            
+            appendMessage(replyText, 'bot', true); // true = เป็น HTML
+
         } catch (err) {
-            appendMessage("ขออภัย ระบบขัดข้อง: " + err.message, 'bot');
+            console.error(err);
+            appendMessage(`❌ เชื่อมต่อ Server ไม่ได้ (${err.message})<br>กรุณาเช็คว่ารัน app.py หรือยัง`, 'bot', true);
         } finally {
             typingUi.style.display = 'none';
         }
@@ -283,10 +308,21 @@
     function appendMessage(content, sender, isHTML = false) {
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        if (isHTML) div.innerHTML = content;
-        else div.innerText = content;
+        
+        if (isHTML) {
+            div.innerHTML = content;
+        } else {
+            div.innerText = content;
+        }
+        
         chatArea.appendChild(div);
         chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // ฟังก์ชันรูปภาพ (ถ้าจะใช้ในอนาคต)
+    function handleImage(input) {
+        // ยังไม่เชื่อมต่อ Backend ส่วนรูป
+        alert("ขออภัย ระบบรองรับเฉพาะข้อความในขณะนี้");
     }
 </script>
 
